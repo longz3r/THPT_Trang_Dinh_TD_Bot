@@ -5,28 +5,87 @@
 
 ShiftRegister74HC595<1> shiftRegister_DC(4, 17, 21); // (data pin, clock pin, latch pin)
 
+enum Direction {
+  FORWARD,
+  REVERSE,
+  STOP
+};
+
+void setDCMotorSpeed(int motorNum, int speed) {
+  switch (motorNum) {
+    case 1:
+      analogWrite(25, speed); // set speed for motor 1
+      break;
+    default:
+      return;
+      break;
+  }
+}
+
+void setDCMotorDirection(int motorNum, Direction direction) {
+  u_int8_t pinA, pinB;
+  switch (motorNum) {
+    case 1:
+      pinA = 2;
+      pinB = 3;
+      break;
+    case 2:
+      pinA = 1;
+      pinB = 4;
+      break;
+    case 3:
+      pinA = 0;
+      pinB = 6;
+      break;
+    case 4:
+      pinA = 5;
+      pinB = 7;
+      break;
+    default:
+      return;
+      break;
+  }
+
+  switch (direction) {
+    case FORWARD:
+      shiftRegister_DC.setNoUpdate(pinA, HIGH);
+      shiftRegister_DC.setNoUpdate(pinB, LOW);
+      break;
+    case REVERSE:
+      shiftRegister_DC.setNoUpdate(pinA, LOW);
+      shiftRegister_DC.setNoUpdate(pinB, HIGH);
+      break;
+    case STOP:
+      shiftRegister_DC.setNoUpdate(pinA, LOW);
+      shiftRegister_DC.setNoUpdate(pinB, LOW);
+      break;
+  }
+
+  shiftRegister_DC.updateRegisters();
+}
+
 void setup() {
   Serial.begin(115200);
-  pinMode(13, OUTPUT);
-  pinMode(25, OUTPUT);
+  pinMode(25, OUTPUT); // PWM M1
+  pinMode(2, OUTPUT); // LED
+  pinMode(13, OUTPUT); // DC ENABLE SHIFT REGISTER
+  digitalWrite(13, LOW);
+  digitalWrite(25, HIGH);
 
-  // --- Setup for Shield #1 (DC) ---
-  // ledcSetup(0, 1000, 8); ledcAttachPin(DC_PWM1_PIN, 0);
 }
 
 void loop() {
   Serial.println("FORWARD");
-  shiftRegister_DC.set(2, HIGH); // turn off pin 2
-  shiftRegister_DC.set(3, LOW); // turn off pin 3
-  analogWrite(25, 255); // full speed ahead
+  digitalWrite(2, HIGH);
+  // setDCMotorDirection(1, FORWARD);
+  shiftRegister_DC.set(2, HIGH);
+  shiftRegister_DC.set(3, LOW);
   delay(3000);
-  shiftRegister_DC.set(2, LOW); // turn off pin 2
   Serial.println("REVERSE");
-  shiftRegister_DC.set(3, HIGH); // turn off pin 3
-  analogWrite(25, 150); // full speed ahead
-
-  delay(3000);
-  analogWrite(25, 200); // full speed ahead
-
+  digitalWrite(2, LOW);
+  shiftRegister_DC.set(2, LOW);
+  shiftRegister_DC.set(3, HIGH);
+  shiftRegister_DC.set(6, HIGH);
+  // setDCMotorDirection(1, REVERSE);
   delay(3000);
 }
