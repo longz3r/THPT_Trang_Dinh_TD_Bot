@@ -5,6 +5,7 @@
 #include <Adafruit_PWMServoDriver.h>
 
 ShiftRegister74HC595<1> shiftRegister_DC(15, 4, 16); // (data pin, clock pin, latch pin)
+ShiftRegister74HC595<1> shiftRegister_STEP(16, 17, 5);
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 enum Direction
@@ -54,6 +55,34 @@ const int channelCount = 9;
 
 // this has cyclic depedendency on callback functions, so will be initialized after them
 extern InterruptPWMTracker channels[channelCount];
+
+
+void step(int steps, Direction direction, int speed) {
+  // *** MODIFIED PART ***
+  // Set full power to the stepper coils using PCA9685
+  // 4095 is 100% duty cycle for the 12-bit PCA9685
+  // pwm.setPWM(STEPPER_PWM_CH, 0, 4095);
+
+  int currentStep = 0;
+  for (int i = 0; i < steps; i++) {
+    if (direction == FORWARD) {
+      currentStep++;
+    } else {
+      currentStep--;
+    }
+    currentStep = currentStep % 4;
+    if (currentStep < 0) currentStep = 3;
+
+    // This is a 4-step full-step sequence (this logic does not change)
+    switch (currentStep) {
+      case 0: shiftRegister_STEP.set(2, HIGH); shiftRegister_STEP.set(3, LOW); shiftRegister_STEP.set(1, HIGH); shiftRegister_STEP.set(4, LOW); break;
+      case 1: shiftRegister_STEP.set(2, LOW); shiftRegister_STEP.set(3, HIGH); shiftRegister_STEP.set(1, HIGH); shiftRegister_STEP.set(4, LOW); break;
+      case 2: shiftRegister_STEP.set(2, LOW); shiftRegister_STEP.set(3, HIGH); shiftRegister_STEP.set(1, LOW); shiftRegister_STEP.set(4, HIGH); break;
+      case 3: shiftRegister_STEP.set(2, HIGH); shiftRegister_STEP.set(3, LOW); shiftRegister_STEP.set(1, LOW); shiftRegister_STEP.set(4, HIGH); break;
+    }
+    delayMicroseconds(speed);
+  }
+}
 
 void setDCMotorDirection(int motorNum, Direction direction)
 {
@@ -171,8 +200,11 @@ void setServoAngle(uint8_t channel, int angle)
   pwm.setPWM(channel, 0, pulseLen);
 }
 
-void loop()
-{
+void loop() {
+  pwm.setPWM(4, 0, map(channels[8].durationUp, 500, 2500, 100, 600)); // gripper servo
+  // Serial.print("CH9: ");
+  // Serial.println(channels[8].durationUp);
+  step(100, FORWARD, 20000); // Faster this time
   int speedY = channels[1].durationUp - 1500;
   int speedX = channels[3].durationUp - 1500;
   int rotation = channels[0].durationUp - 1500;
@@ -227,23 +259,23 @@ void loop()
     setDCMotorSpeed(3, map(RL_power, -500, 500, -4095, 4095));
     setDCMotorSpeed(4, map(RR_power, -500, 500, -4095, 4095));
 
-    Serial.print("Speed X: ");
-    Serial.print(speedX);
-    Serial.print(" | ");
-    Serial.print("Speed Y: ");
-    Serial.print(speedY);
-    Serial.print(" | ");
-    Serial.print("Rotation: ");
-    Serial.print(rotation);
-    Serial.print(" | ");
+    // Serial.print("Speed X: ");
+    // Serial.print(speedX);
+    // Serial.print(" | ");
+    // Serial.print("Speed Y: ");
+    // Serial.print(speedY);
+    // Serial.print(" | ");
+    // Serial.print("Rotation: ");
+    // Serial.print(rotation);
+    // Serial.print(" | ");
 
-    Serial.print(map(FR_power, -500, 500, -4095, 4095));
-    Serial.print(" | ");
-    Serial.print(map(FL_power, -500, 500, -4095, 4095));
-    Serial.print(" | ");
-    Serial.print(map(RL_power, -500, 500, -4095, 4095));
-    Serial.print(" | ");
-    Serial.println(map(RR_power, -500, 500, -4095, 4095));
+    // Serial.print(map(FR_power, -500, 500, -4095, 4095));
+    // Serial.print(" | ");
+    // Serial.print(map(FL_power, -500, 500, -4095, 4095));
+    // Serial.print(" | ");
+    // Serial.print(map(RL_power, -500, 500, -4095, 4095));
+    // Serial.print(" | ");
+    // Serial.println(map(RR_power, -500, 500, -4095, 4095));
   }
 }
 
