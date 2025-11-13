@@ -5,7 +5,7 @@
 #include <Adafruit_PWMServoDriver.h>
 
 ShiftRegister74HC595<1> shiftRegister_DC(15, 4, 16); // (data pin, clock pin, latch pin)
-ShiftRegister74HC595<1> shiftRegister_STEP(16, 17, 5);
+ShiftRegister74HC595<1> shiftRegister_STEP(17, 5, 18);
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 enum Direction
@@ -196,18 +196,48 @@ void setup()
 
 void setServoAngle(uint8_t channel, int angle)
 {
-  int pulseLen = map(angle, 0, 180, 100, 500);
+  int pulseLen = map(angle, 0, 180, 102, 512);
   pwm.setPWM(channel, 0, pulseLen);
 }
 
 void loop() {
-  pwm.setPWM(4, 0, map(channels[8].durationUp, 500, 2500, 100, 600)); // gripper servo
-  // Serial.print("CH9: ");
-  // Serial.println(channels[8].durationUp);
-  step(100, FORWARD, 20000); // Faster this time
+  // pwm.setPWM(8, 0, map(channels[8].duratinUp, 1000, 2000, 102, 512)); // gripper servo
+  // setServoAngle(9, map(channels[8].durationUp, 1000, 2000, 0, 180));
+  // pwm.setPWM(10, 0, map(channels[8].durationUp, 1000, 2000, 102, 512)); // gripper servo
+  // step(100, FORWARD, 2000); // Faster this time
   int speedY = channels[1].durationUp - 1500;
   int speedX = channels[3].durationUp - 1500;
   int rotation = channels[0].durationUp - 1500;
+
+  if (channels[4].durationUp > 2000) {
+    step(100, FORWARD, 2000);
+  } else if (channels[4].durationUp < 1000) {
+    step(100, REVERSE, 2000);
+  }
+
+  // tay gap len xuong
+  if (channels[7].durationUp > 1900) {
+    setServoAngle(8, 180); // lift servo up
+  } else if (channels[7].durationUp < 1600 && channels[7].durationUp > 1400) {
+    setServoAngle(8, 140); // lift servo up
+  } else if (channels[7].durationUp < 1100) {
+     setServoAngle(8, 110); // lift servo up
+  }
+
+  
+  if (channels[5].durationUp < 1500) {
+    // pwm.setPWM(12, 0, 500); // open gripper
+    setServoAngle(12, 90);
+  } else if (channels[5].durationUp > 1500) {
+    setServoAngle(12, 160);
+  }
+
+  // tay gap dong mo
+  if (channels[6].durationUp < 1500) {
+    setServoAngle(9, 10);
+  } else if (channels[6].durationUp > 1500) {
+    setServoAngle(9, 65);
+  }
 
   if (speedX > 490)
     speedX = 500;
@@ -258,24 +288,6 @@ void loop() {
     setDCMotorSpeed(2, map(FL_power, -500, 500, -4095, 4095));
     setDCMotorSpeed(3, map(RL_power, -500, 500, -4095, 4095));
     setDCMotorSpeed(4, map(RR_power, -500, 500, -4095, 4095));
-
-    // Serial.print("Speed X: ");
-    // Serial.print(speedX);
-    // Serial.print(" | ");
-    // Serial.print("Speed Y: ");
-    // Serial.print(speedY);
-    // Serial.print(" | ");
-    // Serial.print("Rotation: ");
-    // Serial.print(rotation);
-    // Serial.print(" | ");
-
-    // Serial.print(map(FR_power, -500, 500, -4095, 4095));
-    // Serial.print(" | ");
-    // Serial.print(map(FL_power, -500, 500, -4095, 4095));
-    // Serial.print(" | ");
-    // Serial.print(map(RL_power, -500, 500, -4095, 4095));
-    // Serial.print(" | ");
-    // Serial.println(map(RR_power, -500, 500, -4095, 4095));
   }
 }
 
