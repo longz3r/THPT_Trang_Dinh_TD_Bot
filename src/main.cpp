@@ -168,8 +168,11 @@ void setup()
   Serial.begin(115200);
   pinMode(2, OUTPUT); // LED
 
-  Serial.println("TD BOT v1.0");
-  Serial.println("Nghiên cứu và phát triển bởi CLB Lập trình & Robotics THPT Tràng Định");
+  if (Serial.availableForWrite()) {
+    Serial.println("TD BOT v1.0");
+    Serial.println("Nghiên cứu và phát triển bởi CLB Lập trình & Robotics THPT Tràng Định");
+  }
+  
 
   pwm.begin();
   pwm.setOscillatorFrequency(26500000);
@@ -217,26 +220,27 @@ void loop() {
 
   // tay gap len xuong
   if (channels[7].durationUp > 1900) {
-    setServoAngle(8, 180); // lift servo up
-  } else if (channels[7].durationUp < 1600 && channels[7].durationUp > 1400) {
     setServoAngle(8, 140); // lift servo up
+  } else if (channels[7].durationUp < 1600 && channels[7].durationUp > 1400) {
+    setServoAngle(8, 85); // lift servo up
   } else if (channels[7].durationUp < 1100) {
-     setServoAngle(8, 110); // lift servo up
+     setServoAngle(8, 20); // lift servo up
   }
 
   
-  if (channels[5].durationUp < 1500) {
+  if (channels[4].durationUp > 1900) {
     // pwm.setPWM(12, 0, 500); // open gripper
-    setServoAngle(12, 90);
-  } else if (channels[5].durationUp > 1500) {
-    setServoAngle(12, 160);
+    setServoAngle(12, 45);
+  } else if (channels[4].durationUp > 1400  && channels[4].durationUp < 1600) {
+    setServoAngle(12, 135);
   }
 
   // tay gap dong mo
-  if (channels[6].durationUp < 1500) {
+  if (channels[5].durationUp < 1500) {
     setServoAngle(9, 10);
-  } else if (channels[6].durationUp > 1500) {
-    setServoAngle(9, 65);
+  } else if (channels[5].durationUp > 1500) {
+    // setServoAngle(9, 65);
+    setServoAngle(9, map(channels[8].durationUp,1000, 2000, 40, 80));
   }
 
   if (speedX > 490)
