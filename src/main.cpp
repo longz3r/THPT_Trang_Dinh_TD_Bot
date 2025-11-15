@@ -129,9 +129,9 @@ void setDCMotorState(int motorNum, Direction direction, int pwmValue) {
 
 void setServoAngle(uint8_t channel, int angle) {
   // Constrain angle to safe limits
-  angle = constrain(angle, 0, 180);
-  int pulseLen = map(angle, 0, 180, 102, 512);
-  pwm.setPWM(channel, 0, pulseLen);
+  // angle = constrain(angle, 0, 180);
+  // int pulseLen = map(angle, 0, 180, 102, 512);
+  pwm.setPWM(channel, 0, map(angle, 0, 180, 102, 512));
 }
 
 void handleDrive(int speedX, int speedY, int rotation) {
@@ -184,25 +184,25 @@ void handleDrive(int speedX, int speedY, int rotation) {
 void handleManipulators() {
   // --- LIFT SERVO ---
   if (channels[7].durationUp > 1900) {
-    setServoAngle(CH_SERVO_LIFT, 140); 
+    setServoAngle(8, 110); 
   } else if (channels[7].durationUp < 1600 && channels[7].durationUp > 1400) {
-    setServoAngle(CH_SERVO_LIFT, 85); 
+    setServoAngle(8, 85); 
   } else if (channels[7].durationUp < 1100) {
-     setServoAngle(CH_SERVO_LIFT, 20); 
+     setServoAngle(8, 20); 
   }
 
   // --- GRIPPER & ARM ROTATION ---
   if (channels[4].durationUp > 1900) {
-    setServoAngle(CH_SERVO_GRIPPER_L, 45);
+    setServoAngle(12, 45);
   } else if (channels[4].durationUp > 1400 && channels[4].durationUp < 1600) {
-    setServoAngle(CH_SERVO_GRIPPER_L, 135);
+    setServoAngle(12, 135);
     setServoAngle(CH_SERVO_GRIPPER_R, 70);
   } else if (channels[4].durationUp < 1100) {
     setServoAngle(CH_SERVO_GRIPPER_R, 155);
   }
 
   // --- GRIPPER ROTATION ---
-  if (channels[5].durationUp < 1500 && channels[5].durationUp > 800) {
+  if (channels[5].durationUp < 1500) {
     setServoAngle(CH_SERVO_GRIPPER_ROT, 10);
   } else if (channels[5].durationUp >= 1500) {
     // Map channel 9 (Aux) to rotation angle
