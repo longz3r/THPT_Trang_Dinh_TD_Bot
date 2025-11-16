@@ -26,7 +26,7 @@
 #define SR_DC_LATCH 16
 
 // RC Receiver Pins
-const int rc_pins[] = {13, 12, 14, 27, 26, 25, 33, 32, 35};
+const int rc_pins[] = {13, 12, 14, 27, 26, 25, 33, 32, 34};
 const int channelCount = 9;
 
 // --- OBJECT INSTANTIATION ---
@@ -184,11 +184,11 @@ void handleDrive(int speedX, int speedY, int rotation) {
 void handleManipulators() {
   // --- LIFT SERVO ---
   if (channels[7].durationUp > 1900) {
-    setServoAngle(8, 110); 
+    setServoAngle(8, 90); 
   } else if (channels[7].durationUp < 1600 && channels[7].durationUp > 1400) {
-    setServoAngle(8, 85); 
+    setServoAngle(8, 70); 
   } else if (channels[7].durationUp < 1100) {
-     setServoAngle(8, 20); 
+     setServoAngle(8, 0); 
   }
 
   // --- GRIPPER & ARM ROTATION ---
@@ -240,10 +240,28 @@ void loop() {
   // Calculate RC inputs (Centered at 0)
   // Assuming RC range is roughly 1000 to 2000. 1500 is center.
   int speedY = channels[1].durationUp - 1500;
-  int speedX = channels[3].durationUp - 1500;
-  int rotation = channels[0].durationUp - 1500;
+  int rotation = channels[3].durationUp - 1500;
+  int speedX = channels[0].durationUp - 1500;
 
   handleDrive(speedX, speedY, rotation);
+  // Serial.print("CH1: ");
+  // Serial.print(channels[0].durationUp);
+  // Serial.print(" | CH2: ");
+  // Serial.print(channels[1].durationUp);
+  // Serial.print(" | CH3: ");
+  // Serial.print(channels[2].durationUp);
+  // Serial.print(" | CH4: ");
+  // Serial.print(channels[3].durationUp);
+  // Serial.print(" | CH5: ");
+  // Serial.print(channels[4].durationUp);
+  // Serial.print(" | CH6: ");
+  // Serial.print(channels[5].durationUp);
+  // Serial.print(" | CH7: ");
+  // Serial.print(channels[6].durationUp);
+  // Serial.print(" | CH8: ");
+  // Serial.print(channels[7].durationUp);
+  // Serial.print(" | CH9: ");
+  // Serial.println(channels[8].durationUp);
   handleManipulators();
   
   // Small delay not needed as handleDrive has no blocking code, 
