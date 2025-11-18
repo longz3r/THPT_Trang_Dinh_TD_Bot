@@ -1,3 +1,7 @@
+// cho người sau:
+// code được tối ưu khá tốt dù chỉ chạy trên 1 nhân CPU
+// chạy 2 CPU thì hơi dư thừa
+
 // import thư viện
 
 // shift register để điều khiển hướng động cơ DC
