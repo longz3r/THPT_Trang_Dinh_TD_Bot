@@ -140,11 +140,6 @@ void handleDrive(int speedX, int speedY, int rotation) {
   if (abs(speedY) < 20) speedY = 0;
   if (abs(rotation) < 20) rotation = 0;
 
-  // Constrain Inputs
-  speedX = constrain(speedX, -500, 500);
-  speedY = constrain(speedY, -500, 500);
-  rotation = constrain(rotation, -500, 500);
-
   if (speedX == 0 && speedY == 0 && rotation == 0) {
     setDCMotorState(1, STOP, 0);
     setDCMotorState(2, STOP, 0);
@@ -168,6 +163,19 @@ void handleDrive(int speedX, int speedY, int rotation) {
     RL = map(RL, -maxPower, maxPower, -500, 500);
     RR = map(RR, -maxPower, maxPower, -500, 500);
   }
+
+  // Serial.print("Speed X: ");
+  // Serial.print(speedX);
+  // Serial.print(" | Speed Y: ");
+  // Serial.print(speedY);
+  // Serial.print(" | FR: ");
+  // Serial.print(FR);
+  // Serial.print(" | FL: ");
+  // Serial.print(FL);
+  // Serial.print(" | RL: ");
+  // Serial.print(RL);
+  // Serial.print(" | RR: ");
+  // Serial.println(RR);
 
   // Apply power
   // Helper lambda to get direction
@@ -195,8 +203,8 @@ void handleManipulators() {
   if (channels[4].durationUp > 1900) {
     setServoAngle(12, 45);
   } else if (channels[4].durationUp > 1400 && channels[4].durationUp < 1600) {
-    setServoAngle(12, 135);
-    setServoAngle(CH_SERVO_GRIPPER_R, 70);
+    setServoAngle(12, 120);
+    setServoAngle(CH_SERVO_GRIPPER_R, 60);
   } else if (channels[4].durationUp < 1100) {
     setServoAngle(CH_SERVO_GRIPPER_R, 155);
   }
