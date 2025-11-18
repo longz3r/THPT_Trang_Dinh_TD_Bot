@@ -1,17 +1,22 @@
+// import thư viện
+
+// shift register để điều khiển hướng động cơ DC
 #include <ShiftRegister74HC595.h>
+// thư viện của arduino do dùng arduino framework
 #include <Arduino.h>
+// điều khiển mạch pca9585 để xuất xung pwm cho động cơ dc và servo
 #include <SPI.h>
 #include <Adafruit_PWMServoDriver.h>
 
 // --- CONFIGURATION & PIN DEFINITIONS ---
 
-// DC Motor Map (PCA9685 Channels)
+// chân tín hiệu tốc độ động cơ trên pca9685
 #define CH_MOTOR_1 0
 #define CH_MOTOR_2 1
 #define CH_MOTOR_3 2
 #define CH_MOTOR_4 3
 
-// Servo Map (PCA9685 Channels)
+// chân servo trên pca9685
 #define CH_SERVO_LIFT 8
 #define CH_SERVO_GRIPPER_ROT 9
 #define CH_SERVO_GRIPPER_L 12
@@ -19,25 +24,27 @@
 #define CH_SERVO_AUX_1 15
 #define CH_SERVO_AUX_2 14
 
-// Shift Register Pins (ESP32)
-// DC Direction Control
+// chân điều khiển hướng trên mạch điều khiển động cơ
 #define SR_DC_DATA  15
 #define SR_DC_CLOCK 4
 #define SR_DC_LATCH 16
 
-// RC Receiver Pins
+// chân tín hiệu từ tay điều khiển
 const int rc_pins[] = {13, 12, 14, 27, 26, 25, 33, 32, 34};
 const int channelCount = 9;
 
 // --- OBJECT INSTANTIATION ---
 
+// cài đặt ban đầu
 ShiftRegister74HC595<1> shiftRegister_DC(SR_DC_DATA, SR_DC_CLOCK, SR_DC_LATCH);
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
+// biến hướng
 enum Direction { FORWARD, REVERSE, STOP };
 
 // --- CLASSES ---
-
+// không sửa phần này
+// đọc tín hiệu từ tay điều khiển
 class InterruptPWMTracker {
 public:
   volatile unsigned long lastRaising;
@@ -96,13 +103,13 @@ void IRAM_ATTR channel6onChangeInterrupt() { channels[5].updateFromPinChangeInte
 void IRAM_ATTR channel7onChangeInterrupt() { channels[6].updateFromPinChangeInterrupt(); }
 void IRAM_ATTR channel8onChangeInterrupt() { channels[7].updateFromPinChangeInterrupt(); }
 void IRAM_ATTR channel9onChangeInterrupt() { channels[8].updateFromPinChangeInterrupt(); }
+// hết phần không sửa, đọc tín hiệu từ tay điều khiển
 
-// --- HELPER FUNCTIONS ---
-
+// hàm điều khiển trạng thái động cơ DC
 void setDCMotorState(int motorNum, Direction direction, int pwmValue) {
   uint8_t pinA, pinB;
   
-  // Map Motor Number to Shift Register Pins
+  // không sửa phần này, chân điều khiển hướng động cơ
   switch (motorNum) {
     case 1: pinA = 2; pinB = 3; break;
     case 2: pinA = 1; pinB = 4; break;
@@ -111,7 +118,7 @@ void setDCMotorState(int motorNum, Direction direction, int pwmValue) {
     default: return;
   }
 
-  // Update Shift Register buffer
+  // cài đặt hướng cho động cơ
   if (direction == FORWARD) {
     shiftRegister_DC.setNoUpdate(pinA, HIGH);
     shiftRegister_DC.setNoUpdate(pinB, LOW);
@@ -123,10 +130,13 @@ void setDCMotorState(int motorNum, Direction direction, int pwmValue) {
     shiftRegister_DC.setNoUpdate(pinB, LOW);
   }
 
-  // Set PWM
+  // cài tốc độ
   pwm.setPWM(motorNum - 1, 0, pwmValue);
 }
 
+// hàm điều khiển góc servo (0-180),
+// dùng servo 360 thì có thể dùng hàm này
+// servo 270 sẽ không lấy được full góc bằng hàm này
 void setServoAngle(uint8_t channel, int angle) {
   // Constrain angle to safe limits
   // angle = constrain(angle, 0, 180);
@@ -134,12 +144,14 @@ void setServoAngle(uint8_t channel, int angle) {
   pwm.setPWM(channel, 0, map(angle, 0, 180, 102, 512));
 }
 
+// hàm điều khiển chuyển động robot
 void handleDrive(int speedX, int speedY, int rotation) {
-  // Deadband to prevent buzzing
-  if (abs(speedX) < 20) speedX = 0;
-  if (abs(speedY) < 20) speedY = 0;
-  if (abs(rotation) < 20) rotation = 0;
+  // loại bỏ sai số từ tay điều khiển
+  if (abs(speedX) < 10) speedX = 0;
+  if (abs(speedY) < 10) speedY = 0;
+  if (abs(rotation) < 10) rotation = 0;
 
+  // nếu không có gì thì dừng động cơ
   if (speedX == 0 && speedY == 0 && rotation == 0) {
     setDCMotorState(1, STOP, 0);
     setDCMotorState(2, STOP, 0);
@@ -149,13 +161,14 @@ void handleDrive(int speedX, int speedY, int rotation) {
     return;
   }
 
-  // Mecanum Kinematics
-  int FL = speedY + speedX + rotation;
-  int FR = speedY - speedX - rotation;
-  int RL = speedY - speedX + rotation;
-  int RR = speedY + speedX - rotation;
+  // phương trình điều khiển bánh xe mecanum
+  int FL = speedY + speedX + rotation; // bánh trái trước
+  int FR = speedY - speedX - rotation; // bánh phải trước
+  int RL = speedY - speedX + rotation; // bánh trái sau
+  int RR = speedY + speedX - rotation; // bánh phải sau
 
-  // Normalize if exceeding max PWM
+  // giới hạn công suất tối đa động cơ
+  // bánh nào quá 500 thì kéo cả 4 xuống theo tỉ lệ
   int maxPower = max(max(abs(FL), abs(FR)), max(abs(RL), abs(RR)));
   if (maxPower > 500) {
     FL = map(FL, -maxPower, maxPower, -500, 500);
@@ -164,6 +177,7 @@ void handleDrive(int speedX, int speedY, int rotation) {
     RR = map(RR, -maxPower, maxPower, -500, 500);
   }
 
+  // DEBUG OUTPUT
   // Serial.print("Speed X: ");
   // Serial.print(speedX);
   // Serial.print(" | Speed Y: ");
@@ -177,43 +191,60 @@ void handleDrive(int speedX, int speedY, int rotation) {
   // Serial.print(" | RR: ");
   // Serial.println(RR);
 
-  // Apply power
-  // Helper lambda to get direction
+  // xác định hướng tiến hay lùi (tốc độ > 0 thì tiến, < 0 thì lùi, = 0 thì dừng)
   auto getDir = [](int p) { return (p > 0) ? FORWARD : ((p < 0) ? REVERSE : STOP); };
   
+  // gửi tín hiệu đến động cơ
   setDCMotorState(1, getDir(FR), map(abs(FR), 0, 500, 0, 4095));
   setDCMotorState(2, getDir(FL), map(abs(FL), 0, 500, 0, 4095));
   setDCMotorState(3, getDir(RL), map(abs(RL), 0, 500, 0, 4095));
   setDCMotorState(4, getDir(RR), map(abs(RR), 0, 500, 0, 4095));
   
+  // gửi tín hiệu đến shift register
   shiftRegister_DC.updateRegisters();
 }
 
+// hàm các cần gạt điều khiển
 void handleManipulators() {
-  // --- LIFT SERVO ---
+  // TAY GẮP LÊN XUỐNG
+
+  // Tay gắp cao nhất
   if (channels[7].durationUp > 1900) {
-    setServoAngle(8, 90); 
+    if (channels[6].durationUp < 1500) {
+      // tay gắp lên cao nhất có thể
+      setServoAngle(8, 135); 
+    } else {
+      // tay gắp khi gạt nước
+      setServoAngle(8, 90);
+    }
   } else if (channels[7].durationUp < 1600 && channels[7].durationUp > 1400) {
+    // tay gắp ở giữa (lấy hạt trên cao)
     setServoAngle(8, 70); 
   } else if (channels[7].durationUp < 1100) {
-     setServoAngle(8, 0); 
+    // tay gắp hạ thấp (lấy hạt dưới thấp)
+    setServoAngle(8, 0); 
   }
 
-  // --- GRIPPER & ARM ROTATION ---
+  // thả hạt 2 bên
   if (channels[4].durationUp > 1900) {
+    // mở bên trái
     setServoAngle(12, 45);
   } else if (channels[4].durationUp > 1400 && channels[4].durationUp < 1600) {
+    // đóng 2 bên
     setServoAngle(12, 120);
     setServoAngle(CH_SERVO_GRIPPER_R, 60);
   } else if (channels[4].durationUp < 1100) {
+    // mở bên phải
     setServoAngle(CH_SERVO_GRIPPER_R, 155);
   }
 
-  // --- GRIPPER ROTATION ---
+  // TAY GẮP VÀO
   if (channels[5].durationUp < 1500) {
+    // nhả ra
     setServoAngle(CH_SERVO_GRIPPER_ROT, 10);
   } else if (channels[5].durationUp >= 1500) {
-    // Map channel 9 (Aux) to rotation angle
+    // găp vào
+    // độ sâu gắp vào thay đổi theo núm vặn
     int angle = map(channels[8].durationUp, 1000, 2000, 40, 80);
     setServoAngle(CH_SERVO_GRIPPER_ROT, angle);
   }
@@ -223,34 +254,38 @@ void handleManipulators() {
 
 void setup() {
   // Serial.begin(115200); // Debugging if needed
-  pinMode(2, OUTPUT); // Built-in LED
+
   
+  pinMode(2, OUTPUT); // PIN 2 -> đèn led trên ESP32
+  
+  // cài đặt pca9685
   pwm.begin();
-  pwm.setOscillatorFrequency(27000000); // Tuned slightly often fixes servo jitter
+  pwm.setOscillatorFrequency(27000000);   // chỉnh tần số xung nhịp từ 25MHz (mặc định) đến 27MHz khi nào dùng đồng hồ đo điện ra được 50Hz thì (chấp nhận được 49.9->50.1Hz)
   pwm.setPWMFreq(50); 
 
-  // Initial State: Motors STOP
+  // dừng tất cả động cơ
   handleDrive(0, 0, 0);
 
-  // Initial Servos
-  pwm.setPWM(CH_SERVO_AUX_1, 0, 150);
-  pwm.setPWM(CH_SERVO_AUX_2, 0, 600);
+  // cài 2 chân cuối trên pca9685 để cắm test
+  pwm.setPWM(CH_SERVO_AUX_1, 0, 102);
+  pwm.setPWM(CH_SERVO_AUX_2, 0, 512);
 
-  digitalWrite(2, HIGH); // LED ON indicating ready
 
-  // Initialize Interrupts
+  // cài đặt chân nhận tín hiệu từ tay điều khiển
   for (int i = 0; i < channelCount; i++) {
     channels[i].setup();
   }
+
+  digitalWrite(2, HIGH); // bật đèn led trên ESP32 để báo đã khởi động xong
 }
 
 void loop() {
-  // Calculate RC inputs (Centered at 0)
-  // Assuming RC range is roughly 1000 to 2000. 1500 is center.
+  // tính tín hiệu từ tay điều khiển trong khoảng 1000-2000, 1500 là ở giữa
   int speedY = channels[1].durationUp - 1500;
   int rotation = channels[3].durationUp - 1500;
   int speedX = channels[0].durationUp - 1500;
 
+  // gọi hàm điều khiển
   handleDrive(speedX, speedY, rotation);
   // Serial.print("CH1: ");
   // Serial.print(channels[0].durationUp);
@@ -270,9 +305,8 @@ void loop() {
   // Serial.print(channels[7].durationUp);
   // Serial.print(" | CH9: ");
   // Serial.println(channels[8].durationUp);
+
+  // gọi hàm xử lí các cần gạt
   handleManipulators();
   
-  // Small delay not needed as handleDrive has no blocking code, 
-  // but keeps the loop from running unnecessarily fast if no work is done.
-  // However, for smoothest stepper, we remove delay.
 }
