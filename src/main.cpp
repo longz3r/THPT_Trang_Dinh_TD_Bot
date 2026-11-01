@@ -63,8 +63,8 @@ public:
     attachInterrupt(digitalPinToInterrupt(pin), callback, CHANGE);
   }
 
-  // IRAM_ATTR is crucial for ESP32 interrupts to prevent crashes/latency
-  void IRAM_ATTR updateFromPinChangeInterrupt() {
+  //  is crucial for ESP32 interrupts to prevent crashes/latency
+  void  updateFromPinChangeInterrupt() {
     unsigned long current_micros = micros();
     if (digitalRead(pin)) {
       lastRaising = current_micros;
@@ -75,15 +75,15 @@ public:
 };
 
 // --- FORWARD DECLARATIONS OF ISRs ---
-void IRAM_ATTR channel1onChangeInterrupt();
-void IRAM_ATTR channel2onChangeInterrupt();
-void IRAM_ATTR channel3onChangeInterrupt();
-void IRAM_ATTR channel4onChangeInterrupt();
-void IRAM_ATTR channel5onChangeInterrupt();
-void IRAM_ATTR channel6onChangeInterrupt();
-void IRAM_ATTR channel7onChangeInterrupt();
-void IRAM_ATTR channel8onChangeInterrupt();
-void IRAM_ATTR channel9onChangeInterrupt();
+void  channel1onChangeInterrupt();
+void  channel2onChangeInterrupt();
+void  channel3onChangeInterrupt();
+void  channel4onChangeInterrupt();
+void  channel5onChangeInterrupt();
+void  channel6onChangeInterrupt();
+void  channel7onChangeInterrupt();
+void  channel8onChangeInterrupt();
+void  channel9onChangeInterrupt();
 
 InterruptPWMTracker channels[channelCount] = {
     InterruptPWMTracker(rc_pins[0], channel1onChangeInterrupt),
@@ -98,15 +98,15 @@ InterruptPWMTracker channels[channelCount] = {
 };
 
 // --- ISR IMPLEMENTATIONS ---
-void IRAM_ATTR channel1onChangeInterrupt() { channels[0].updateFromPinChangeInterrupt(); }
-void IRAM_ATTR channel2onChangeInterrupt() { channels[1].updateFromPinChangeInterrupt(); }
-void IRAM_ATTR channel3onChangeInterrupt() { channels[2].updateFromPinChangeInterrupt(); }
-void IRAM_ATTR channel4onChangeInterrupt() { channels[3].updateFromPinChangeInterrupt(); }
-void IRAM_ATTR channel5onChangeInterrupt() { channels[4].updateFromPinChangeInterrupt(); }
-void IRAM_ATTR channel6onChangeInterrupt() { channels[5].updateFromPinChangeInterrupt(); }
-void IRAM_ATTR channel7onChangeInterrupt() { channels[6].updateFromPinChangeInterrupt(); }
-void IRAM_ATTR channel8onChangeInterrupt() { channels[7].updateFromPinChangeInterrupt(); }
-void IRAM_ATTR channel9onChangeInterrupt() { channels[8].updateFromPinChangeInterrupt(); }
+void  channel1onChangeInterrupt() { channels[0].updateFromPinChangeInterrupt(); }
+void  channel2onChangeInterrupt() { channels[1].updateFromPinChangeInterrupt(); }
+void  channel3onChangeInterrupt() { channels[2].updateFromPinChangeInterrupt(); }
+void  channel4onChangeInterrupt() { channels[3].updateFromPinChangeInterrupt(); }
+void  channel5onChangeInterrupt() { channels[4].updateFromPinChangeInterrupt(); }
+void  channel6onChangeInterrupt() { channels[5].updateFromPinChangeInterrupt(); }
+void  channel7onChangeInterrupt() { channels[6].updateFromPinChangeInterrupt(); }
+void  channel8onChangeInterrupt() { channels[7].updateFromPinChangeInterrupt(); }
+void  channel9onChangeInterrupt() { channels[8].updateFromPinChangeInterrupt(); }
 // hết phần không sửa, đọc tín hiệu từ tay điều khiển
 
 // hàm điều khiển trạng thái động cơ DC
