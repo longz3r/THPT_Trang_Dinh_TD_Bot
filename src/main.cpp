@@ -34,8 +34,8 @@
 #define SR_DC_LATCH 16
 
 // chân tín hiệu từ tay điều khiển
-const int rc_pins[] = {13, 12, 14, 27, 26, 25, 33, 32, 34};
-const int channelCount = 9;
+const int rc_pins[] = {13, 12, 14, 27, 26, 25, 33, 32, 35, 34};
+const int channelCount = 10;
 
 // --- OBJECT INSTANTIATION ---
 
@@ -84,6 +84,7 @@ void  channel6onChangeInterrupt();
 void  channel7onChangeInterrupt();
 void  channel8onChangeInterrupt();
 void  channel9onChangeInterrupt();
+void  channel10onChangeInterrupt();
 
 InterruptPWMTracker channels[channelCount] = {
     InterruptPWMTracker(rc_pins[0], channel1onChangeInterrupt),
@@ -95,6 +96,7 @@ InterruptPWMTracker channels[channelCount] = {
     InterruptPWMTracker(rc_pins[6], channel7onChangeInterrupt),
     InterruptPWMTracker(rc_pins[7], channel8onChangeInterrupt),
     InterruptPWMTracker(rc_pins[8], channel9onChangeInterrupt),
+    InterruptPWMTracker(rc_pins[9], channel10onChangeInterrupt),
 };
 
 // --- ISR IMPLEMENTATIONS ---
@@ -107,6 +109,7 @@ void  channel6onChangeInterrupt() { channels[5].updateFromPinChangeInterrupt(); 
 void  channel7onChangeInterrupt() { channels[6].updateFromPinChangeInterrupt(); }
 void  channel8onChangeInterrupt() { channels[7].updateFromPinChangeInterrupt(); }
 void  channel9onChangeInterrupt() { channels[8].updateFromPinChangeInterrupt(); }
+void  channel10onChangeInterrupt() { channels[9].updateFromPinChangeInterrupt(); }
 // hết phần không sửa, đọc tín hiệu từ tay điều khiển
 
 // hàm điều khiển trạng thái động cơ DC
@@ -264,7 +267,7 @@ void setup() {
   
   // cài đặt pca9685
   pwm.begin();
-  pwm.setOscillatorFrequency(27000000);   // chỉnh tần số xung nhịp từ 25MHz (mặc định) đến 27MHz khi nào dùng đồng hồ đo điện ra được 50Hz thì (chấp nhận được 49.9->50.1Hz)
+  pwm.setOscillatorFrequency(26150000);   // chỉnh tần số xung nhịp từ 25MHz (mặc định) đến 27MHz khi nào dùng đồng hồ đo điện ra được 50Hz thì (chấp nhận được 49.9->50.1Hz)
   pwm.setPWMFreq(50); 
 
   // dừng tất cả động cơ
@@ -308,7 +311,9 @@ void loop() {
   // Serial.print(" | CH8: ");
   // Serial.print(channels[7].durationUp);
   // Serial.print(" | CH9: ");
-  // Serial.println(channels[8].durationUp);
+  // Serial.print(channels[8].durationUp);
+  // Serial.print(" | CH10: ");
+  // Serial.println(channels[9].durationUp);
 
   // gọi hàm xử lí các cần gạt
   handleManipulators();
